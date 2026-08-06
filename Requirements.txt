@@ -1,6 +1,26 @@
-tensorflow
-numpy
-pillow
-pickle-mixin
-opencv-python
+# PlantCure.ai - Python Dependencies
+# Generated for production-ready AI application
 
+# Deep Learning
+tensorflow>=2.13.0,<2.16.0
+keras>=2.13.0
+
+# UI Framework
+gradio>=4.0.0
+
+# Image Processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
+
+# Numerical Computing
+numpy>=1.24.0
+
+# PDF Generation
+reportlab>=4.0.0
+
+# Data Visualization
+matplotlib>=3.7.0
+
+# Additional Utilities
+python-dateutil>=2.8.0
