@@ -35,6 +35,10 @@ packages_to_collect = [
     'certifi',
     'pydantic_core',
     'typing_inspection',
+    'webview',
+    'tensorflow',
+    'keras',
+    'cv2',
 ]
 
 for package_name in packages_to_collect:

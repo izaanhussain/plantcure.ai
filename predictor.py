@@ -5,7 +5,6 @@ Handles model loading and disease prediction from images
 
 import os
 import pickle
-import sys
 import numpy as np
 from keras.models import load_model
 from keras.utils import load_img, img_to_array
@@ -13,25 +12,7 @@ from PIL import Image
 import cv2
 import time
 
-
-def resource_path(relative_path):
-    """Resolve resource paths for development and PyInstaller bundled execution."""
-    running_under_pyinstaller = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
-
-    if running_under_pyinstaller:
-        base_path = sys._MEIPASS
-        print("[INFO] Running in PyInstaller mode")
-    else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        print("[INFO] Running in development mode")
-
-    if os.path.isabs(relative_path):
-        absolute_path = relative_path
-    else:
-        absolute_path = os.path.abspath(os.path.join(base_path, relative_path))
-
-    print(f"[INFO] Resolved resource path: {absolute_path}")
-    return absolute_path
+from utils import resource_path
 
 
 def _raise_file_not_found(file_path, description):
@@ -72,9 +53,6 @@ class DiseasePredictor:
         self.model_path = resource_path(model_path or "model/plant_disease_transfer.h5")
         self.class_indices_path = resource_path(class_indices_path or "model/class_indices.pkl")
 
-        print(f"[INFO] Model path: {self.model_path}")
-        print(f"[INFO] Class indices path: {self.class_indices_path}")
-
         self._load_model()
         self._load_class_indices()
     
@@ -87,9 +65,7 @@ class DiseasePredictor:
         try:
             self._verify_path(self.model_path, "Model file")
             self.model = load_model(self.model_path)
-            print(f"[OK] Model loaded from {self.model_path}")
-        except Exception as e:
-            print(f"[ERROR] Error loading model: {e}")
+        except Exception:
             raise
     
     def _load_class_indices(self):
@@ -100,9 +76,7 @@ class DiseasePredictor:
                 class_indices = pickle.load(f)
             # Sort by index to get correct order
             self.class_names = [name for name, idx in sorted(class_indices.items(), key=lambda x: x[1])]
-            print(f"[OK] Loaded {len(self.class_names)} disease classes")
-        except Exception as e:
-            print(f"[ERROR] Error loading class indices: {e}")
+        except Exception:
             raise
     
     def preprocess_image(self, img_path):
@@ -129,8 +103,7 @@ class DiseasePredictor:
             img_array = img_array / 255.0  # Normalize
             img_array = np.expand_dims(img_array, axis=0)
             return img_array
-        except Exception as e:
-            print(f"[ERROR] Error preprocessing image: {e}")
+        except Exception:
             raise
     
     def predict(self, img_path, top_k=5):

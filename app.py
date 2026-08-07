@@ -11,8 +11,12 @@ import sys
 import logging
 import tempfile
 from datetime import datetime
+from pathlib import Path
 from PIL import Image
 import numpy as np
+import webview
+import threading
+import shutil
 
 # Import custom modules
 from predictor import get_predictor
@@ -21,7 +25,7 @@ from database import get_database
 from utils import (
     save_thumbnail, generate_pdf_report, format_disease_name,
     get_confidence_color, validate_image_file, format_timestamp,
-    create_directories
+    create_directories, get_writable_data_dir
 )
 
 
@@ -38,7 +42,6 @@ class PlantCureApp:
         self.disease_db = get_disease_db()
         self.database = get_database()
         
-        print("[OK] PlantCure.ai initialized successfully")
     
     def predict_image(self, image_input):
         """
@@ -244,14 +247,13 @@ class PlantCureApp:
                 }
                 
                 self.database.add_prediction(prediction_data)
-            except Exception as e:
-                print(f"[WARNING] Could not save to database: {e}")
+            except Exception:
+                pass
             
             return pil_image, prediction_text, disease_details
             
         except Exception as e:
             error_msg = f"[ERROR] Error during prediction: {str(e)}"
-            print(error_msg)
             return None, error_msg, ""
     
     def get_prediction_history(self):
@@ -324,13 +326,13 @@ class PlantCureApp:
         """Generate PDF report for prediction"""
         try:
             if image_input is None:
-                return None, "[ERROR] Please upload an image first"
+                return "[ERROR] Please upload an image first"
             
             # Get prediction
             result_image, prediction_text, disease_details = self.predict_image(image_input)
             
             if result_image is None:
-                return None, prediction_text
+                return prediction_text
 
             if isinstance(image_input, np.ndarray):
                 pil_image = Image.fromarray(image_input)
@@ -342,7 +344,7 @@ class PlantCureApp:
 
             prediction_result = self.predictor.predict(pil_image, top_k=5)
             if not prediction_result['success']:
-                return None, "[ERROR] Could not generate prediction details for report"
+                return "[ERROR] Could not generate prediction details for report"
 
             top_prediction = prediction_result['top_prediction']
             disease_name = format_disease_name(top_prediction['class'])
@@ -352,7 +354,15 @@ class PlantCureApp:
             
             # Generate report filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            report_path = f"reports/PlantCure_Report_{timestamp}.pdf"
+            reports_dir = Path(get_writable_data_dir("reports"))
+            reports_dir.mkdir(exist_ok=True)
+            report_path = reports_dir / f"PlantCure_Report_{timestamp}.pdf"
+            
+            # Ensure a unique filename if the timestamp collides
+            counter = 1
+            while report_path.exists():
+                report_path = reports_dir / f"PlantCure_Report_{timestamp}_{counter}.pdf"
+                counter += 1
             
             # Prepare prediction data
             prediction_data = {
@@ -364,13 +374,22 @@ class PlantCureApp:
             }
             
             # Generate PDF
-            if generate_pdf_report(prediction_data, disease_info, report_path):
-                return report_path, f"[OK] Report generated: {report_path}"
+            if generate_pdf_report(prediction_data, disease_info, str(report_path)):
+                downloads_folder = Path.home() / "Downloads"
+                downloads_folder.mkdir(parents=True, exist_ok=True)
+                download_path = downloads_folder / report_path.name
+                
+                try:
+                    shutil.copy2(str(report_path), str(download_path))
+                except Exception as save_error:
+                    return f"[ERROR] Failed to save report to Downloads: {save_error}"
+                
+                return f"✅ Report generated successfully!\n\nSaved to:\n{download_path}"
             else:
-                return None, "[ERROR] Failed to generate report"
+                return "[ERROR] Failed to generate report"
                 
         except Exception as e:
-            return None, f"[ERROR] Error generating report: {str(e)}"
+            return f"[ERROR] Error generating report: {str(e)}"
     
     def create_ui(self):
         """Create the Gradio UI"""
@@ -852,7 +871,6 @@ class PlantCureApp:
                             
                             with gr.Row():
                                 report_btn = gr.Button("📄 Generate PDF Report", elem_classes="btn-secondary")
-                                download_output = gr.File(label="Download Report")
                 
                 # Bottom section - History
                 with gr.Column(elem_classes="panel-card"):
@@ -888,7 +906,7 @@ class PlantCureApp:
             report_btn.click(
                 fn=self.generate_report,
                 inputs=[image_input],
-                outputs=[download_output, prediction_output]
+                outputs=[prediction_output]
             )
             
             refresh_btn.click(
@@ -931,8 +949,6 @@ def _override_uvicorn_default_log_config() -> None:
 def main():
     """Main function to run the application"""
     try:
-        print("Starting PlantCure.ai...")
-        
         # Initialize app
         app_instance = PlantCureApp()
         
@@ -940,7 +956,6 @@ def main():
         app = app_instance.create_ui()
         
         # Launch app on an available local port
-        print("Launching application...")
         preferred_port = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
         server_port = preferred_port
         for port in range(preferred_port, preferred_port + 10):
@@ -961,15 +976,33 @@ def main():
             "share": False,
             "show_error": True,
             "quiet": False,
-            "inbrowser": True,
+            "inbrowser": False,
             "css": app_instance.custom_css,
             "theme": gr.themes.Soft()
         }
 
-        app.launch(**launch_kwargs)
+        # Launch Gradio in a separate thread
+        gradio_thread = threading.Thread(target=app.launch, kwargs=launch_kwargs, daemon=True)
+        gradio_thread.start()
+        
+        # Wait a moment for server to start
+        import time
+        time.sleep(2)
+        
+        # Create pywebview window
+        webview.create_window(
+            title="PlantCure.ai",
+            url=f"http://127.0.0.1:{server_port}",
+            width=1400,
+            height=900,
+            resizable=True,
+            fullscreen=False
+        )
+        
+        # Start webview (this blocks until window is closed)
+        webview.start()
         
     except Exception as e:
-        print(f"[ERROR] Fatal error starting application: {e}")
         raise
 
 

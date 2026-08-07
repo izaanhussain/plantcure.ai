@@ -4,19 +4,52 @@ Helper functions for image processing, PDF generation, and formatting
 """
 
 import os
+import sys
 import io
 from datetime import datetime
 from PIL import Image
 import hashlib
 
 
+def _is_pyinstaller_bundle():
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+
+def resource_path(relative_path):
+    """Resolve resource paths for development and PyInstaller execution."""
+    if os.path.isabs(relative_path):
+        return relative_path
+
+    base_path = sys._MEIPASS if _is_pyinstaller_bundle() else os.path.dirname(os.path.abspath(__file__))
+    return os.path.abspath(os.path.join(base_path, relative_path))
+
+
+def get_user_data_dir():
+    """Return a writable directory for app data on the current machine."""
+    if os.name == "nt":
+        local_appdata = os.environ.get("LOCALAPPDATA")
+        if local_appdata:
+            base_dir = os.path.join(local_appdata, "PlantCure.ai")
+        else:
+            base_dir = os.path.expanduser(r"~\AppData\Local\PlantCure.ai")
+    else:
+        base_dir = os.path.expanduser("~/.plantcure")
+
+    os.makedirs(base_dir, exist_ok=True)
+    return base_dir
+
+
+def get_writable_data_dir(folder_name):
+    """Return a writable folder for application data such as history or reports."""
+    folder_path = os.path.join(get_user_data_dir(), folder_name)
+    os.makedirs(folder_path, exist_ok=True)
+    return folder_path
+
+
 def create_directories():
-    """Create necessary directories for the application"""
-    directories = ['history', 'reports', 'assets']
-    for directory in directories:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            print(f"[OK] Created directory: {directory}")
+    """Create necessary writable directories for the application."""
+    for directory in ['history', 'reports']:
+        os.makedirs(get_writable_data_dir(directory), exist_ok=True)
 
 
 def save_thumbnail(image_path, target_dir, size=(200, 200)):
@@ -32,14 +65,17 @@ def save_thumbnail(image_path, target_dir, size=(200, 200)):
         Path to the saved thumbnail
     """
     try:
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
+        resolved_dir = target_dir
+        if not os.path.isabs(resolved_dir):
+            resolved_dir = get_writable_data_dir(target_dir)
+        else:
+            os.makedirs(resolved_dir, exist_ok=True)
         
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        hash_val = hashlib.md5(image_path.encode()).hexdigest()[:8]
+        hash_val = hashlib.md5(str(image_path).encode()).hexdigest()[:8]
         thumbnail_name = f"thumb_{timestamp}_{hash_val}.jpg"
-        thumbnail_path = os.path.join(target_dir, thumbnail_name)
+        thumbnail_path = os.path.join(resolved_dir, thumbnail_name)
         
         # Open and resize image
         img = Image.open(image_path)
@@ -47,8 +83,7 @@ def save_thumbnail(image_path, target_dir, size=(200, 200)):
         img.save(thumbnail_path, "JPEG", quality=85)
         
         return thumbnail_path
-    except Exception as e:
-        print(f"[ERROR] Error saving thumbnail: {e}")
+    except Exception:
         return None
 
 
@@ -249,8 +284,8 @@ def generate_pdf_report(prediction_data, disease_info, report_path):
                     story.append(Paragraph('<b>Uploaded Image</b>', heading_style))
                     story.append(report_image)
                     story.append(Spacer(1, 0.15 * inch))
-            except Exception as image_error:
-                print(f"[WARNING] Could not attach uploaded image to PDF: {image_error}")
+            except Exception:
+                pass
 
         story.append(Paragraph('<b>Prediction Confidence</b>', heading_style))
         bar_width = max(0.2 * inch, min(4.4 * inch, (confidence / 100.0) * 4.4 * inch))
@@ -309,6 +344,5 @@ def generate_pdf_report(prediction_data, disease_info, report_path):
 
         doc.build(story)
         return True
-    except Exception as e:
-        print(f"[ERROR] Error generating PDF: {e}")
+    except Exception:
         return False

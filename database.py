@@ -9,6 +9,8 @@ import json
 from datetime import datetime
 import shutil
 
+from utils import get_writable_data_dir
+
 
 class PredictionDatabase:
     """Handles prediction history storage and retrieval"""
@@ -20,12 +22,12 @@ class PredictionDatabase:
         Args:
             db_path: Path to SQLite database file
         """
-        self.db_path = db_path or "history/predictions.db"
+        self.db_path = db_path or os.path.join(get_writable_data_dir("history"), "predictions.db")
         self.history_dir = os.path.dirname(self.db_path)
         
         # Ensure history directory exists
         if self.history_dir and not os.path.exists(self.history_dir):
-            os.makedirs(self.history_dir)
+            os.makedirs(self.history_dir, exist_ok=True)
         
         self._init_database()
     
@@ -52,10 +54,8 @@ class PredictionDatabase:
             
             conn.commit()
             conn.close()
-            print(f"[OK] Database initialized at {self.db_path}")
             
         except Exception as e:
-            print(f"[ERROR] Error initializing database: {e}")
             raise
     
     def add_prediction(self, prediction_data):
@@ -100,11 +100,9 @@ class PredictionDatabase:
             prediction_id = cursor.lastrowid
             conn.close()
             
-            print(f"[OK] Prediction saved to database (ID: {prediction_id})")
             return prediction_id
             
-        except Exception as e:
-            print(f"[ERROR] Error adding prediction to database: {e}")
+        except Exception:
             return None
     
     def get_all_predictions(self, limit=None, offset=0):
@@ -139,8 +137,7 @@ class PredictionDatabase:
             conn.close()
             return predictions
             
-        except Exception as e:
-            print(f"[ERROR] Error retrieving predictions: {e}")
+        except Exception:
             return []
     
     def get_prediction_by_id(self, prediction_id):
@@ -170,8 +167,7 @@ class PredictionDatabase:
             conn.close()
             return None
             
-        except Exception as e:
-            print(f"[ERROR] Error retrieving prediction: {e}")
+        except Exception:
             return None
     
     def delete_prediction(self, prediction_id):
@@ -198,14 +194,11 @@ class PredictionDatabase:
             if row and row[0] and os.path.exists(row[0]):
                 try:
                     os.remove(row[0])
-                    print(f"[OK] Deleted thumbnail: {row[0]}")
-                except Exception as e:
-                    print(f"[WARNING] Could not delete thumbnail: {e}")
+                except Exception:
+                    pass
             
-            print(f"[OK] Prediction {prediction_id} deleted")
-            
-        except Exception as e:
-            print(f"[ERROR] Error deleting prediction: {e}")
+        except Exception:
+            pass
     
     def clear_all_predictions(self):
         """Delete all predictions from database and thumbnails"""
@@ -230,10 +223,8 @@ class PredictionDatabase:
                     except Exception as e:
                         print(f"[WARNING] Could not delete thumbnail: {e}")
             
-            print("[OK] All predictions cleared")
-            
-        except Exception as e:
-            print(f"[ERROR] Error clearing predictions: {e}")
+        except Exception:
+            pass
     
     def get_statistics(self):
         """Get database statistics"""
@@ -312,8 +303,7 @@ class PredictionDatabase:
             conn.close()
             return predictions
             
-        except Exception as e:
-            print(f"[ERROR] Error searching predictions: {e}")
+        except Exception:
             return []
     
     def export_to_json(self, export_path):
@@ -329,11 +319,9 @@ class PredictionDatabase:
             with open(export_path, 'w') as f:
                 json.dump(predictions, f, indent=2)
             
-            print(f"[OK] Exported {len(predictions)} predictions to {export_path}")
             return True
             
-        except Exception as e:
-            print(f"[ERROR] Error exporting predictions: {e}")
+        except Exception:
             return False
     
     def get_prediction_count(self):
@@ -345,8 +333,7 @@ class PredictionDatabase:
             count = cursor.fetchone()[0]
             conn.close()
             return count
-        except Exception as e:
-            print(f"[ERROR] Error getting prediction count: {e}")
+        except Exception:
             return 0
 
 
