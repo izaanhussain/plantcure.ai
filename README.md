@@ -67,22 +67,7 @@ I built PlantCure.ai to learn how image classification works using tensorflow I 
 
 This project was trained using the **New Plant Diseases Dataset (Augmented)** available on Kaggle.
 
-Dataset contains over **70,000** images covering **38 different plant disease classes** including:
-
-- Apple
-- Tomato
-- Potato
-- Corn
-- Grape
-- Strawberry
-- Orange
-- Peach
-- Pepper
-- Cherry
-- Blueberry
-- Soybean
-- Raspberry
-- Squash
+Dataset contains over **70,000** images covering **38 different plant disease classes**
 
 ---
 
