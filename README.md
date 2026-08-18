@@ -2,7 +2,7 @@
 
 > AI-powered plant disease detection using TensorFlow and MobileNetV2.
 
-PlantCure.ai is a desktop application that identifies plant diseases from leaf images using a deep learning model trained with Transfer Learning. The project is built entirely in Python and runs completely offline after installation.
+I built PlantCure.ai to learn how image classification works using tensorflow I trained a MobileNetV2 model on the New Plant Diseases Dataset from Kaggle and then created a desktop application that can identify plant diseases from leaf images without an internet connection. This project taught me how to train models, save checkpoints as i had no dedicated gpu the training would be stopped in between so checkpoints helmed me to save the progress, and connect an AI model to a real application.
 
 ---
 
@@ -170,34 +170,6 @@ python app.py
 5. Disease information is retrieved from the local database.
 6. The prediction is saved locally.
 7. A PDF report can be exported.
-
----
-
-# Future Improvements
-
-- Android application
-- iOS application
-- Batch image prediction
-- More plant species
-- REST API
-- Cloud synchronization (optional)
-- Multi-language support
-
----
-
-# License
-
-This project is licensed under the MIT License.
-
----
-
-# Acknowledgements
-
-- TensorFlow
-- Gradio
-- MobileNetV2
-- ReportLab
-- New Plant Diseases Dataset (Augmented)
 
 ---
 
