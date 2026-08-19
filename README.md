@@ -1,25 +1,18 @@
-# 🌿 PlantCure.ai
-
-> AI-powered plant disease detection using TensorFlow and MobileNetV2.
-
-I built PlantCure.ai to learn how image classification works using tensorflow I trained a MobileNetV2 model on the New Plant Diseases Dataset from Kaggle and then created a desktop application that can identify plant diseases from leaf images without an internet connection. This project taught me how to train models, save checkpoints as i had no dedicated gpu the training would be stopped in between so checkpoints helmed me to save the progress, and connect an AI model to a real application.
-
+🌿 PlantCure.ai
+PlantCure.ai is a desktop application I built to learn how AI image classification works.
+The idea started when I came across the New Plant Diseases Dataset on Kaggle. I wanted to see if I could train my own model and turn it into something that people could actually use instead of leaving it as just another notebook.
+I trained a MobileNetV2 model using TensorFlow and then built a desktop application around it. The app works completely offline—you just select a leaf image and it predicts the disease, shows some information about it, and saves the result locally.
+One challenge I faced was that I trained the model on my laptop without a dedicated GPU. Training took a long time, and sometimes it would stop before finishing. Because of that, I started using model checkpoints so I could continue training instead of starting over. That was one of the biggest things I learned while building this project.
 ---
-
-## Features
-
-- 🌱 Detects **38 plant diseases**
-- 🎯 **92% validation accuracy**
-- 🧠 MobileNetV2 Transfer Learning model
-- 📈 Displays Top-5 predictions with confidence scores
-- 📖 Disease description and symptoms
-- 💊 Organic & chemical treatment suggestions
-- 🛡 Prevention tips
-- 📄 Export prediction as PDF
-- 🗂 Stores prediction history locally
-- 💻 Runs completely offline
-
----
+What it can do
+Detect 38 different plant diseases
+Show the top 5 predictions with confidence scores
+Display disease information and symptoms
+Suggest organic and chemical treatments
+Show prevention tips
+Save prediction history locally
+Export predictions as PDF reports
+Work completely offline after installation
 
 ## Screenshots
 
@@ -45,31 +38,17 @@ I built PlantCure.ai to learn how image classification works using tensorflow I 
 
 <img width="608" height="767" alt="image" src="https://github.com/user-attachments/assets/a0e66a91-d96b-4547-886c-ad5cf23057ba" />
 
-
----
-
-# Model
-
-| Property | Value |
-|----------|-------|
-| Architecture | MobileNetV2 |
-| Learning Method | Transfer Learning |
-| Framework | TensorFlow / Keras |
-| Dataset | New Plant Diseases Dataset (Augmented) |
-| Classes | 38 |
-| Validation Accuracy | **92%** |
-| Input Size | 128 × 128 |
-| Prediction Time | <1 second (CPU) |
-
----
+# How it works
+Select a plant leaf image.
+The image is resized to 128 × 128.
+The trained MobileNetV2 model predicts the disease.
+The application displays the top predictions with confidence scores.
+Information about the predicted disease is loaded from a local database.
+The prediction can be saved and exported as a PDF report.
 
 # Dataset
-
-This project was trained using the **New Plant Diseases Dataset (Augmented)** available on Kaggle.
-
-Dataset contains over **70,000** images covering **38 different plant disease classes**
-
----
+I trained the model using the New Plant Diseases Dataset (Augmented) from Kaggle.
+The dataset contains over 70,000 leaf images across 38 disease categories and healthy plant classes.
 
 # Tech Stack
 
@@ -146,22 +125,9 @@ python app.py
 
 ---
 
-# How it Works
-
-1. Upload a plant leaf image.
-2. The image is resized to **128×128**.
-3. The TensorFlow model performs inference.
-4. The Top-5 predictions are generated.
-5. Disease information is retrieved from the local database.
-6. The prediction is saved locally.
-7. A PDF report can be exported.
-
----
 
 ## About
 
 This project was built as part of **Hack Club Stardance**.
 
-The goal was not only to train an AI model but to build a complete desktop application that anyone can use to identify plant diseases without requiring an internet connection.
-
-If you found this project interesting, consider giving it a ⭐.
+Thanks for checking it out!
