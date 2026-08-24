@@ -2,10 +2,9 @@
 # Generated for production-ready AI application
 
 # Deep Learning
-# TensorFlow 2.16.x is not compatible with Python 3.10 on Render's default runtime.
-# Pin to the latest stable release supported on Python 3.10.
-tensorflow==2.15.1
-keras==2.15.0
+# Match the saved model metadata: backend=tensorflow, keras_version=3.11.3.
+# Use the TensorFlow bundle for Keras to avoid version drift.
+tensorflow==2.16.1
 
 # UI Framework
 gradio==6.25.0

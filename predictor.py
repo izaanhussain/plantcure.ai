@@ -6,8 +6,8 @@ Handles model loading and disease prediction from images
 import os
 import pickle
 import numpy as np
-from keras.models import load_model
-from keras.utils import load_img, img_to_array
+from tensorflow import keras
+from tensorflow.keras.utils import load_img, img_to_array
 from PIL import Image
 import cv2
 import time
@@ -64,7 +64,7 @@ class DiseasePredictor:
         """Load the trained model"""
         try:
             self._verify_path(self.model_path, "Model file")
-            self.model = load_model(self.model_path)
+            self.model = keras.models.load_model(self.model_path)
         except Exception:
             raise
     
