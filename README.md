@@ -1,8 +1,8 @@
 # 🌿 PlantCure.ai
-PlantCure.ai is a desktop application I built to learn how AI image classification works.
+PlantCure.ai is a web application I built to learn how AI image classification works.
 The idea started when I came across the New Plant Diseases Dataset on Kaggle. I wanted to see if I could train my own model and turn it into something that people could actually use instead of leaving it as just another notebook.
 ---
-I trained a MobileNetV2 model using TensorFlow and then built a desktop application around it. The app works completely offline—you just select a leaf image and it predicts the disease, shows some information about it, and saves the result locally.
+I trained a MobileNetV2 model using TensorFlow and then built a desktop application around it unfortunately that didnt work so i built web application . The web app works completely you just select a leaf image and it predicts the disease, shows some information about it, and saves the result locally.
 ---
 One challenge I faced was that I trained the model on my laptop without a dedicated GPU. Training took a long time, and sometimes it would stop before finishing. Because of that, I started using model checkpoints so I could continue training instead of starting over. That was one of the biggest things I learned while building this project.
 ---
