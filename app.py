@@ -1,6 +1,5 @@
 """
 PlantCure.ai - Main Application
-Modern AI-powered plant disease detection application
 """
 
 import copy
@@ -14,7 +13,6 @@ from datetime import datetime
 from pathlib import Path
 from PIL import Image
 import numpy as np
-import webview
 import threading
 import shutil
 
@@ -951,10 +949,19 @@ def main():
     try:
         # Initialize app
         app_instance = PlantCureApp()
-        
+
+        # Render deployment mode: serve Gradio only without pywebview
+        if os.environ.get("RENDER") or os.environ.get("PORT"):
+            demo = app_instance.create_ui()
+            demo.launch(
+                server_name="0.0.0.0",
+                server_port=int(os.environ.get("PORT", 7860))
+            )
+            return
+
         # Create UI
         app = app_instance.create_ui()
-        
+
         # Launch app on an available local port
         preferred_port = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
         server_port = preferred_port
@@ -984,12 +991,14 @@ def main():
         # Launch Gradio in a separate thread
         gradio_thread = threading.Thread(target=app.launch, kwargs=launch_kwargs, daemon=True)
         gradio_thread.start()
-        
+
         # Wait a moment for server to start
         import time
         time.sleep(2)
-        
-        # Create pywebview window
+
+        # Desktop-only pywebview launch path
+        import webview
+
         webview.create_window(
             title="PlantCure.ai",
             url=f"http://127.0.0.1:{server_port}",
@@ -998,10 +1007,10 @@ def main():
             resizable=True,
             fullscreen=False
         )
-        
+
         # Start webview (this blocks until window is closed)
         webview.start()
-        
+
     except Exception as e:
         raise
 
