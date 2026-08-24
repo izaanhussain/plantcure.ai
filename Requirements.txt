@@ -5,7 +5,7 @@
 # TensorFlow 2.16.x is not compatible with Python 3.10 on Render's default runtime.
 # Pin to the latest stable release supported on Python 3.10.
 tensorflow==2.15.1
-keras==3.11.3
+keras==2.15.0
 
 # UI Framework
 gradio==6.25.0
