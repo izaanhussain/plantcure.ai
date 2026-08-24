@@ -321,47 +321,49 @@ class PlantCureApp:
             return f"[ERROR] Error clearing history: {str(e)}"
     
     def generate_report(self, image_input):
-        """Generate PDF report for prediction"""
+        """Generate PDF report for prediction and return it for browser download."""
+        cleanup_paths = []
         try:
             if image_input is None:
-                return "[ERROR] Please upload an image first"
-            
+                return "[ERROR] Please upload an image first", None
+
             # Get prediction
             result_image, prediction_text, disease_details = self.predict_image(image_input)
-            
+
             if result_image is None:
-                return prediction_text
+                return prediction_text, None
 
             if isinstance(image_input, np.ndarray):
                 pil_image = Image.fromarray(image_input)
                 report_image_path = os.path.join(tempfile.gettempdir(), f"report_{datetime.now().timestamp()}.jpg")
                 pil_image.save(report_image_path)
+                cleanup_paths.append(report_image_path)
             else:
                 report_image_path = image_input
                 pil_image = Image.open(image_input)
 
             prediction_result = self.predictor.predict(pil_image, top_k=5)
             if not prediction_result['success']:
-                return "[ERROR] Could not generate prediction details for report"
+                return "[ERROR] Could not generate prediction details for report", None
 
             top_prediction = prediction_result['top_prediction']
             disease_name = format_disease_name(top_prediction['class'])
             confidence = float(top_prediction['confidence'])
             disease_class = top_prediction['class']
             disease_info = self.disease_db.get_disease_info(disease_class)
-            
+
             # Generate report filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             reports_dir = Path(get_writable_data_dir("reports"))
             reports_dir.mkdir(exist_ok=True)
             report_path = reports_dir / f"PlantCure_Report_{timestamp}.pdf"
-            
+
             # Ensure a unique filename if the timestamp collides
             counter = 1
             while report_path.exists():
                 report_path = reports_dir / f"PlantCure_Report_{timestamp}_{counter}.pdf"
                 counter += 1
-            
+
             # Prepare prediction data
             prediction_data = {
                 'image_path': report_image_path,
@@ -370,24 +372,31 @@ class PlantCureApp:
                 'prediction_time': prediction_result.get('prediction_time', 0.0),
                 'top_predictions': prediction_result.get('all_predictions', [])
             }
-            
+
             # Generate PDF
             if generate_pdf_report(prediction_data, disease_info, str(report_path)):
-                downloads_folder = Path.home() / "Downloads"
-                downloads_folder.mkdir(parents=True, exist_ok=True)
-                download_path = downloads_folder / report_path.name
-                
-                try:
-                    shutil.copy2(str(report_path), str(download_path))
-                except Exception as save_error:
-                    return f"[ERROR] Failed to save report to Downloads: {save_error}"
-                
-                return f"✅ Report generated successfully!\n\nSaved to:\n{download_path}"
+                if not os.environ.get("RENDER"):
+                    downloads_folder = Path.home() / "Downloads"
+                    downloads_folder.mkdir(parents=True, exist_ok=True)
+                    download_path = downloads_folder / report_path.name
+                    try:
+                        shutil.copy2(str(report_path), str(download_path))
+                    except Exception as save_error:
+                        return f"[ERROR] Failed to save report to Downloads: {save_error}", str(report_path)
+
+                return "✅ Report generated successfully!\n\nDownload the PDF using the link below.", str(report_path)
             else:
-                return "[ERROR] Failed to generate report"
-                
+                return "[ERROR] Failed to generate report", None
+
         except Exception as e:
-            return f"[ERROR] Error generating report: {str(e)}"
+            return f"[ERROR] Error generating report: {str(e)}", None
+        finally:
+            for cleanup_path in cleanup_paths:
+                try:
+                    if os.path.exists(cleanup_path):
+                        os.remove(cleanup_path)
+                except Exception:
+                    pass
     
     def create_ui(self):
         """Create the Gradio UI"""
@@ -812,7 +821,7 @@ class PlantCureApp:
                 # Header
                 gr.HTML("""
                 <div class="hero-section">
-                    <h1 class="hero-title">🌿 PlantCure.ai</h1>
+                    <h1 class="hero-title">🌿 PlantCure.ai 2026 by Izaan Hussain</h1>
                     <p class="hero-subtitle">AI-Powered Plant Disease Detection</p>
                 </div>
                 """)
@@ -869,7 +878,14 @@ class PlantCureApp:
                             
                             with gr.Row():
                                 report_btn = gr.Button("📄 Generate PDF Report", elem_classes="btn-secondary")
-                
+
+                            report_file = gr.File(
+                                label="📄 Download Report",
+                                type="filepath",
+                                interactive=False,
+                                file_count="single"
+                            )
+
                 # Bottom section - History
                 with gr.Column(elem_classes="panel-card"):
                     gr.HTML('<div class="section-title">📜 Prediction History</div>')
@@ -885,7 +901,7 @@ class PlantCureApp:
                 gr.HTML("""
                 <div class="footer" style="padding: 0.6rem 0 0.25rem;">
                     <p style="margin: 0.2rem 0;">Built with ❤️ using TensorFlow, Gradio & Modern AI Technology</p>
-                    <p style="margin: 0.2rem 0;">PlantCure.ai © 2024 - Hack Club Stardance Project</p>
+                    <p style="margin: 0.2rem 0;">PlantCure.ai 2026 by Izaan Hussain</p>
                 </div>
                 """)
             
@@ -897,16 +913,16 @@ class PlantCureApp:
             )
             
             clear_btn.click(
-                fn=lambda: (None, "", ""),
-                outputs=[image_input, prediction_output, disease_details]
+                fn=lambda: (None, "", "", None),
+                outputs=[image_input, prediction_output, disease_details, report_file]
             )
-            
+
             report_btn.click(
                 fn=self.generate_report,
                 inputs=[image_input],
-                outputs=[prediction_output]
+                outputs=[prediction_output, report_file]
             )
-            
+
             refresh_btn.click(
                 fn=self.get_prediction_history,
                 outputs=[history_output]
@@ -1000,7 +1016,7 @@ def main():
         import webview
 
         webview.create_window(
-            title="PlantCure.ai",
+            title="PlantCure.ai 2026 by Izaan Hussain",
             url=f"http://127.0.0.1:{server_port}",
             width=1400,
             height=900,
