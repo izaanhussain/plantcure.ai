@@ -352,10 +352,10 @@ class PlantCureApp:
             disease_class = top_prediction['class']
             disease_info = self.disease_db.get_disease_info(disease_class)
 
-            # Generate report filename
+            # Generate report filename in the system temp directory so Gradio can serve it
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            reports_dir = Path(get_writable_data_dir("reports"))
-            reports_dir.mkdir(exist_ok=True)
+            reports_dir = Path(tempfile.gettempdir()) / "plantcure_reports"
+            reports_dir.mkdir(parents=True, exist_ok=True)
             report_path = reports_dir / f"PlantCure_Report_{timestamp}.pdf"
 
             # Ensure a unique filename if the timestamp collides
@@ -373,17 +373,8 @@ class PlantCureApp:
                 'top_predictions': prediction_result.get('all_predictions', [])
             }
 
-            # Generate PDF
+            # Generate PDF inside the temp directory so the browser can download it
             if generate_pdf_report(prediction_data, disease_info, str(report_path)):
-                if not os.environ.get("RENDER"):
-                    downloads_folder = Path.home() / "Downloads"
-                    downloads_folder.mkdir(parents=True, exist_ok=True)
-                    download_path = downloads_folder / report_path.name
-                    try:
-                        shutil.copy2(str(report_path), str(download_path))
-                    except Exception as save_error:
-                        return f"[ERROR] Failed to save report to Downloads: {save_error}", str(report_path)
-
                 return "✅ Report generated successfully!\n\nDownload the PDF using the link below.", str(report_path)
             else:
                 return "[ERROR] Failed to generate report", None
