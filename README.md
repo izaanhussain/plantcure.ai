@@ -14,7 +14,7 @@ Suggest organic and chemical treatments
 Show prevention tips
 Save prediction history locally
 Export predictions as PDF reports
-Work completely offline after installation
+
 
 ## Screenshots
 
