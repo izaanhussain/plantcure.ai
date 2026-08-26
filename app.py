@@ -352,9 +352,9 @@ class PlantCureApp:
             disease_class = top_prediction['class']
             disease_info = self.disease_db.get_disease_info(disease_class)
 
-            # Generate report filename in the system temp directory so Gradio can serve it
+            # Store reports in a stable writable app directory so Gradio can serve them reliably.
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            reports_dir = Path(tempfile.gettempdir()) / "plantcure_reports"
+            reports_dir = Path(get_writable_data_dir("reports"))
             reports_dir.mkdir(parents=True, exist_ok=True)
             report_path = reports_dir / f"PlantCure_Report_{timestamp}.pdf"
 
@@ -373,9 +373,12 @@ class PlantCureApp:
                 'top_predictions': prediction_result.get('all_predictions', [])
             }
 
-            # Generate PDF inside the temp directory so the browser can download it
+            # Generate PDF in the app-owned data directory. Avoid temporary paths that may be cleared or
+            # inaccessible inside Docker/hosted Linux environments.
             if generate_pdf_report(prediction_data, disease_info, str(report_path)):
-                return "✅ Report generated successfully!\n\nDownload the PDF using the link below.", str(report_path)
+                if not report_path.exists():
+                    return "[ERROR] Report generation did not leave a file on disk", None
+                return "✅ Report generated successfully!\n\nDownload the PDF using the link below.", str(report_path.resolve())
             else:
                 return "[ERROR] Failed to generate report", None
 
