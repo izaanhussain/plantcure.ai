@@ -23,7 +23,7 @@ from database import get_database
 from utils import (
     save_thumbnail, generate_pdf_report, format_disease_name,
     get_confidence_color, validate_image_file, format_timestamp,
-    create_directories, get_writable_data_dir
+    create_directories, get_reports_dir
 )
 
 
@@ -352,10 +352,9 @@ class PlantCureApp:
             disease_class = top_prediction['class']
             disease_info = self.disease_db.get_disease_info(disease_class)
 
-            # Store reports in a stable writable app directory so Gradio can serve them reliably.
+            # Store reports in the current working directory so Gradio can serve them reliably.
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            reports_dir = Path(get_writable_data_dir("reports"))
-            reports_dir.mkdir(parents=True, exist_ok=True)
+            reports_dir = Path(get_reports_dir())
             report_path = reports_dir / f"PlantCure_Report_{timestamp}.pdf"
 
             # Ensure a unique filename if the timestamp collides

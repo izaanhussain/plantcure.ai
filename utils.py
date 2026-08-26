@@ -46,10 +46,17 @@ def get_writable_data_dir(folder_name):
     return folder_path
 
 
+def get_reports_dir():
+    """Return the application-local reports directory used by Gradio downloads."""
+    reports_dir = os.path.join(os.getcwd(), "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    return reports_dir
+
+
 def create_directories():
     """Create necessary writable directories for the application."""
-    for directory in ['history', 'reports']:
-        os.makedirs(get_writable_data_dir(directory), exist_ok=True)
+    os.makedirs(get_writable_data_dir('history'), exist_ok=True)
+    get_reports_dir()
 
 
 def save_thumbnail(image_path, target_dir, size=(200, 200)):
